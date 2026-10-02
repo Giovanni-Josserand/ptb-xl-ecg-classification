@@ -1,0 +1,11 @@
+[project]
+name = "ptb-xl-ecg-classification"
+version = "0.1.0"
+description = "ECG signal classification using the PTB-XL dataset"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = []
+
+[build-system]
+requires = ["uv_build>=0.12.19,<0.13.0"]
+build-backend = "uv_build"

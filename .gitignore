@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+.venv/
+
+# Environment variables
+.env
+
+# IDE
+.idea/
+.vscode/
+
+# Ignore dataset contents, but keep directory structure
+data/**
+!data/**/
+!data/**/.gitkeep
+
+# Generated model files
+*.pt
+*.pth
+
+# Test / coverage caches
+.pytest_cache/
+.coverage
+htmlcov/
