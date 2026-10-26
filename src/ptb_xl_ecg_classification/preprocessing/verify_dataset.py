@@ -1,13 +1,13 @@
 import numpy as np
 
-DATASET_CLEAN_PATH = r"path\\to\\ptbxl_clean\\"
+DATASET_CLEAN_PATH = "../../../data/ptb-xl/ptbxl_clean"
 
 X_train = np.load(
-    f"{DATASET_CLEAN_PATH}\X_train.npy",
+    f"{DATASET_CLEAN_PATH}/X_train.npy",
     mmap_mode="r"
 )
 y_train = np.load(
-    f"{DATASET_CLEAN_PATH}\y_train.npy",
+    f"{DATASET_CLEAN_PATH}/y_train.npy",
     mmap_mode="r"
 )
 

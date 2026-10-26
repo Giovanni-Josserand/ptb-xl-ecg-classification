@@ -12,10 +12,10 @@ from tqdm import tqdm
 
 # ---------------- CONFIGURATION ----------------
 
-DATASET_PATH = "path\\to\\datasets\\"
+DATASET_PATH = "../../../data/ptb-xl"
 
-DATA_DIR = Path(f"{DATASET_PATH}\ptbxl")
-OUTPUT_DIR = Path(f"{DATASET_PATH}\ptbxl_clean")
+DATA_DIR = Path(f"{DATASET_PATH}/ptb-xl")
+OUTPUT_DIR = Path(f"{DATASET_PATH}/ptbxl_clean")
 
 SAMPLING_RATE = 100
 LOWPASS_CUTOFF = 40.0
@@ -294,6 +294,8 @@ def save_split(
 # ---------------- STEP 9: RUN PIPELINE ----------------
 
 def main():
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
     metadata, statements = load_metadata(DATA_DIR)
     train, val, test = split_metadata(metadata)
 
