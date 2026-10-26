@@ -74,4 +74,15 @@ You need to download and set up the dataset manually:
 2. Extract the contents of the downloaded archive.
 3. Move the extracted `ptb-xl/` directory into the existing `data/ptb-xl/` folder.
 
+> The raw ECG recordings from PhysioNet cannot be fed directly into deep learning models. They contain physiological noises (baseline wander, muscle artifacts), unscaled amplitudes, and complex diagnostic text formats.
+
+To clean, filter, normalize, and format the dataset, run the preprocessing pipeline using:
+```bash
+just preprocessing
+```
+You can then check what you have got using :
+```bash
+just verify-preprocessing
+```
+
 ### Project launch
