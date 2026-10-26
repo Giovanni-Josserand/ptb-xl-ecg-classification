@@ -8,3 +8,5 @@ install:
 preprocess:
     uv run python src/ptb_xl_ecg_classification/preprocessing/create_clean_dataset.py
 
+verify-preprocess:
+    uv run python src/ptb_xl_ecg_classification/preprocessing/verify_dataset.py
