@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 # ---------------- CONFIGURATION ----------------
 
-DATASET_PATH = "../../../data/ptb-xl"
+DATASET_PATH = "data/ptb-xl"
 
 DATA_DIR = Path(f"{DATASET_PATH}/ptb-xl")
 OUTPUT_DIR = Path(f"{DATASET_PATH}/ptbxl_clean")

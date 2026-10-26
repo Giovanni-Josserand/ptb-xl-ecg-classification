@@ -1,6 +1,6 @@
 import numpy as np
 
-DATASET_CLEAN_PATH = "../../../data/ptb-xl/ptbxl_clean"
+DATASET_CLEAN_PATH = "data/ptb-xl/ptbxl_clean"
 
 X_train = np.load(
     f"{DATASET_CLEAN_PATH}/X_train.npy",
