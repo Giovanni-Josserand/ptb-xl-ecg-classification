@@ -78,11 +78,17 @@ You need to download and set up the dataset manually:
 
 To clean, filter, normalize, and format the dataset, run the preprocessing pipeline using:
 ```bash
-just preprocessing
+just preprocess
 ```
 You can then check what you have got using :
 ```bash
-just verify-preprocessing
+just verify-preprocess
 ```
+
+The preprocessing pipeline excludes only recordings with documented electrode
+problems because one or more leads may be unreliable. Recordings marked with
+baseline drift, static noise, burst noise, extra beats, or pacemaker signals
+are retained and processed; these annotations may describe correctable noise
+or clinically meaningful signal characteristics.
 
 ### Project launch

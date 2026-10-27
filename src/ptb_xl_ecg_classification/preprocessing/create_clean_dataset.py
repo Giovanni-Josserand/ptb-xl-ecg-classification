@@ -26,6 +26,8 @@ HIGHPASS_CUTOFF = 0.5
 NOTCH_FREQUENCY = None
 
 CLASSES = ["NORM", "MI", "STTC", "CD", "HYP"]
+MIN_LABEL_CONFIDENCE = 50.0
+EXCLUDED_QUALITY_COLUMNS = ("electrodes_problems",)
 
 
 # ---------------- STEP 1: LOAD METADATA ----------------
@@ -45,6 +47,20 @@ def load_metadata(data_dir):
     )
 
     return metadata, statements
+
+
+def remove_unusable_recordings(metadata):
+    """Exclude recordings with documented electrode problems."""
+    flagged = (
+        metadata[list(EXCLUDED_QUALITY_COLUMNS)]
+        .fillna("")
+        .astype(str)
+        .replace("nan", "")
+    )
+    unusable = flagged.ne("").any(axis=1)
+    excluded = int(unusable.sum())
+    print(f"Excluding {excluded} recordings with electrode problems")
+    return metadata.loc[~unusable].copy()
 
 
 # ---------------- STEP 2: LOAD ECG ----------------
@@ -125,13 +141,13 @@ def encode_labels(scp_codes, code_to_class):
     """
     Convert SCP codes to five binary diagnostic superclass labels.
     A superclass is positive if at least one mapped code has
-    positive confidence.
+    confidence at or above MIN_LABEL_CONFIDENCE.
     """
     labels = np.zeros(len(CLASSES), dtype=np.float32)
     class_index = {name: i for i, name in enumerate(CLASSES)}
 
     for code, confidence in scp_codes.items():
-        if confidence is None or confidence <= 0:
+        if confidence is None or confidence < MIN_LABEL_CONFIDENCE:
             continue
 
         category = code_to_class.get(code)
@@ -297,6 +313,7 @@ def main():
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     metadata, statements = load_metadata(DATA_DIR)
+    metadata = remove_unusable_recordings(metadata)
     train, val, test = split_metadata(metadata)
 
     code_to_class = build_label_mapping(statements)
