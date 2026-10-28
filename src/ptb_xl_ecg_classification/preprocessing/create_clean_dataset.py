@@ -1,10 +1,10 @@
 
 from pathlib import Path
 import ast
+from concurrent.futures import ThreadPoolExecutor
 
 import numpy as np
 import pandas as pd
-import wfdb
 
 from scipy.signal import butter, sosfiltfilt, iirnotch, filtfilt
 from tqdm import tqdm
@@ -28,6 +28,7 @@ NOTCH_FREQUENCY = None
 CLASSES = ["NORM", "MI", "STTC", "CD", "HYP"]
 MIN_LABEL_CONFIDENCE = 50.0
 EXCLUDED_QUALITY_COLUMNS = ("electrodes_problems",)
+WORKERS = 8
 
 
 # ---------------- STEP 1: LOAD METADATA ----------------
@@ -72,22 +73,47 @@ def load_ecg(row, data_dir, sampling_rate=100):
         raise ValueError("Sampling rate must be 100 or 500 Hz.")
 
     record_path = data_dir / row[column]
-    signal, fields = wfdb.rdsamp(str(record_path))
+    header_lines = record_path.with_suffix(".hea").read_text().splitlines()
+    header = header_lines[0].split()
+    signal_headers = [line.split() for line in header_lines[1:]]
 
-    signal = np.asarray(signal, dtype=np.float32)
+    if len(header) < 4 or len(signal_headers) != 12:
+        raise ValueError("Unexpected WFDB header.")
 
-    if signal.ndim != 2 or signal.shape[1] != 12:
-        raise ValueError(f"Unexpected ECG shape: {signal.shape}")
+    channels = int(header[1])
+    fs = float(header[2])
+    samples = int(header[3])
+    if channels != 12 or fs != sampling_rate:
+        raise ValueError(
+            f"Expected 12 leads at {sampling_rate} Hz, got "
+            f"{channels} leads at {fs} Hz."
+        )
+
+    if any(fields[1] != "16" for fields in signal_headers):
+        raise ValueError("Only 16-bit PTB-XL records are supported.")
+
+    raw = np.fromfile(record_path.with_suffix(".dat"), dtype="<i2")
+    expected_values = samples * channels
+    if raw.size != expected_values:
+        raise ValueError(
+            f"Expected {expected_values} samples, got {raw.size}."
+        )
+
+    raw = raw.reshape(samples, channels).astype(np.float32)
+    gains = np.asarray(
+        [float(fields[2].split("(", 1)[0]) for fields in signal_headers],
+        dtype=np.float32,
+    )
+    baselines = np.asarray(
+        [float(fields[4]) for fields in signal_headers],
+        dtype=np.float32,
+    )
+    signal = (raw - baselines) / gains
 
     if not np.isfinite(signal).all():
         raise ValueError("ECG contains NaN or infinite values.")
 
-    if fields["fs"] != sampling_rate:
-        raise ValueError(
-            f"Expected {sampling_rate} Hz, got {fields['fs']} Hz."
-        )
-
-    return signal, fields["fs"]
+    return signal, int(fs)
 
 
 # ---------------- STEP 3: FILTER ECG ----------------
@@ -168,6 +194,15 @@ def split_metadata(metadata):
     return train, val, test
 
 
+def load_and_filter_record(args):
+    ecg_id, row, data_dir = args
+    try:
+        signal, fs = load_ecg(row, data_dir, SAMPLING_RATE)
+        return ecg_id, filter_ecg(signal, fs), None
+    except (OSError, ValueError, KeyError) as exc:
+        return ecg_id, None, exc
+
+
 # ---------------- STEP 6: FIT NORMALIZATION ----------------
 
 def fit_normalizer(train, data_dir):
@@ -175,16 +210,24 @@ def fit_normalizer(train, data_dir):
     total_sq = np.zeros(12, dtype=np.float64)
     count = 0
 
-    for _, row in tqdm(
-        train.iterrows(), total=len(train),
-        desc="Fitting training normalization"
-    ):
-        signal, fs = load_ecg(row, data_dir, SAMPLING_RATE)
-        signal = filter_ecg(signal, fs)
+    records = [
+        (ecg_id, row, data_dir)
+        for ecg_id, row in train.iterrows()
+    ]
+    with ThreadPoolExecutor(max_workers=WORKERS) as executor:
+        filtered_records = executor.map(load_and_filter_record, records)
+        for ecg_id, signal, error in tqdm(
+            filtered_records, total=len(records),
+            desc="Fitting training normalization"
+        ):
+            if error is not None:
+                raise RuntimeError(
+                    f"Unable to read ECG {ecg_id} during normalization: {error}"
+                ) from error
 
-        total += signal.sum(axis=0, dtype=np.float64)
-        total_sq += np.square(signal, dtype=np.float64).sum(axis=0)
-        count += signal.shape[0]
+            total += signal.sum(axis=0, dtype=np.float64)
+            total_sq += np.square(signal, dtype=np.float64).sum(axis=0)
+            count += signal.shape[0]
 
     if count == 0:
         raise ValueError("No training signals found.")
@@ -232,34 +275,39 @@ def save_split(
     kept_rows = []
     index = 0
 
+    records = [
+        (ecg_id, row, data_dir)
+        for ecg_id, row in subset.iterrows()
+    ]
     try:
-        for ecg_id, row in tqdm(
-            subset.iterrows(), total=n,
-            desc=f"Saving {split_name}"
-        ):
-            try:
-                signal, fs = load_ecg(row, data_dir, SAMPLING_RATE)
+        with ThreadPoolExecutor(max_workers=WORKERS) as executor:
+            filtered_records = executor.map(load_and_filter_record, records)
+            for ecg_id, signal, error in tqdm(
+                filtered_records, total=n,
+                desc=f"Saving {split_name}"
+            ):
+                if error is not None:
+                    print(f"Skipping ECG {ecg_id}: {error}")
+                    continue
 
                 if signal.shape != (samples, 12):
                     print(f"Skipping ECG {ecg_id}: unexpected shape {signal.shape}")
                     continue
 
-                signal = filter_ecg(signal, fs)
                 signal = normalize_ecg(signal, mean, std)
 
                 if not np.isfinite(signal).all():
                     print(f"Skipping ECG {ecg_id}: invalid filtered signal")
                     continue
 
-                labels = encode_labels(row["scp_codes"], code_to_class)
+                labels = encode_labels(
+                    subset.loc[ecg_id, "scp_codes"], code_to_class
+                )
 
                 X[index] = signal
                 Y[index] = labels
                 kept_rows.append(ecg_id)
                 index += 1
-
-            except (OSError, ValueError, KeyError) as exc:
-                print(f"Skipping ECG {ecg_id}: {exc}")
 
     finally:
         X.flush()
