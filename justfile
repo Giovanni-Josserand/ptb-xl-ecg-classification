@@ -10,3 +10,6 @@ preprocess:
 
 verify-preprocess:
     uv run python src/ptb_xl_ecg_classification/preprocessing/verify_dataset.py
+
+random-forest:
+    uv run python src/ptb_xl_ecg_classification/random_forest.py
