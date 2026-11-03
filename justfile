@@ -19,3 +19,11 @@ evaluate-neural-network:
 
 random-forest:
     uv run python src/ptb_xl_ecg_classification/models/random_forest/train.py
+
+run-svm: svm-feature-selection train-svm evaluate-svm
+svm-feature-selection:
+    uv run python -m src.ptb_xl_ecg_classification.models.support_vector_machine.feature_selection
+train-svm:
+    uv run python -m src.ptb_xl_ecg_classification.models.support_vector_machine.train
+evaluate-svm:
+    uv run python -m src.ptb_xl_ecg_classification.models.support_vector_machine.evaluate

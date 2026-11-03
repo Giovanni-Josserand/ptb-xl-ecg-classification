@@ -14,7 +14,7 @@ OUTPUT_PATH = PROJECT_ROOT / "data" / "output"
 
 # DATASET CONFIGURATION
 CLASSES = ["NORM", "MI", "STTC", "CD", "HYP"]
-
+CLINICAL_COLS = ["age", "sex", "height", "weight", "heart_axis"]
 
 # TRAINING CONFIGURATION
 BATCH_SIZE = 32
