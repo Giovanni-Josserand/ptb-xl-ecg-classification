@@ -30,9 +30,10 @@ RANDOM_FOREST_CHUNK_SIZE = 512
 
 
 # COMPUTING DEVICE
-DEVICE = (
-    torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    if torch is not None
-    else "cpu"
-)
+if torch.backends.mps.is_available():
+    DEVICE = torch.device("mps")
+elif torch.cuda.is_available():
+    DEVICE = torch.device("cuda")
+else:
+    DEVICE = torch.device("cpu")
 
