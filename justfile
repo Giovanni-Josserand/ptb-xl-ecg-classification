@@ -7,13 +7,11 @@ install:
 
 preprocess:
     uv run python src/ptb_xl_ecg_classification/preprocessing/create_clean_dataset.py
-
 verify-preprocess:
     uv run python src/ptb_xl_ecg_classification/preprocessing/verify_dataset.py
 
 train-neural-network:
     uv run python src/ptb_xl_ecg_classification/models/neural_network/train.py
-
 evaluate-neural-network:
     uv run python src/ptb_xl_ecg_classification/models/neural_network/evaluate.py
 
