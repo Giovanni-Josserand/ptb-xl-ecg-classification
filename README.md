@@ -78,17 +78,30 @@ You need to download and set up the dataset manually:
 
 To clean, filter, normalize, and format the dataset, run the preprocessing pipeline using:
 ```bash
-just preprocess
+just preprocessing
 ```
 You can then check what you have got using :
 ```bash
-just verify-preprocess
+just verify-preprocessing
 ```
 
-The preprocessing pipeline excludes only recordings with documented electrode
-problems because one or more leads may be unreliable. Recordings marked with
-baseline drift, static noise, burst noise, extra beats, or pacemaker signals
-are retained and processed; these annotations may describe correctable noise
-or clinically meaningful signal characteristics.
+### Project run
 
-### Project launch
+All project workflows are managed using just. To view all available commands, run:
+```bash
+just
+```
+
+Here is all the commands for each model :
+
+| Commands                  | Descritpions                                                                                                      |
+| ------------------------- |-------------------------------------------------------------------------------------------------------------------|
+| `train-neural-network`    | Train the neural network model and save the best one.                                                             |
+| `evaluate-neural-network` | Evaluate the neural network model and export the performance metrics.                                             |
+| `random-forest`           | Train and evaluate the random forest model. Export performance metrics, save the best models and features matrix. |
+| `run-svm`                 | Execute the full SVM pipeline (feature selecting -> training -> evaluation).                                      |
+| `svm-feature-selection`   | Select the useful features for the SVM model and saved them.                                                      |
+| `train-svm`               | Train the SVM model and save the best one.                                                                        |
+| `evaluate-svm`            | Evaluate the SVM model and export the performance metrics.                                                        |
+
+All the output are saved in `data/output/` directory.
