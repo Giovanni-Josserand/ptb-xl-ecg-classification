@@ -85,4 +85,23 @@ You can then check what you have got using :
 just verify-preprocessing
 ```
 
-### Project launch
+### Project run
+
+All project workflows are managed using just. To view all available commands, run:
+```bash
+just
+```
+
+Here is all the commands for each model :
+
+| Commands                  | Descritpions                                                                                                      |
+| ------------------------- |-------------------------------------------------------------------------------------------------------------------|
+| `train-neural-network`    | Train the neural network model and save the best one.                                                             |
+| `evaluate-neural-network` | Evaluate the neural network model and export the performance metrics.                                             |
+| `random-forest`           | Train and evaluate the random forest model. Export performance metrics, save the best models and features matrix. |
+| `run-svm`                 | Execute the full SVM pipeline (feature selecting -> training -> evaluation).                                      |
+| `svm-feature-selection`   | Select the useful features for the SVM model and saved them.                                                      |
+| `train-svm`               | Train the SVM model and save the best one.                                                                        |
+| `evaluate-svm`            | Evaluate the SVM model and export the performance metrics.                                                        |
+
+All the output are saved in `data/output/` directory.
